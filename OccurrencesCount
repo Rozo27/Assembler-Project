@@ -1,0 +1,208 @@
+.MODEL small
+.STACK 100h 
+
+.DATA 
+
+	sirn db 13,10,"n = $" 
+	sirx db 13,10,"x = $" 
+	sirv db 13,10,"Introduceti valorile:",13,10,"$"
+	sirintrebare db 13,10, "Cate cifre are n?(1/2)",13,10,"$"
+	pozitii db 13,10,"Pozitiile pe care se gaseste valoare sunt:",13,10,"$"
+	gasit db 13,10,"Prima aparitie a valorii se gaseste in vector pe pozitia:",13,10,"$"
+	nextline db 13,10,"$" 
+	afis db 13,10,"Numarul aparitiilor valorii este:",13,10,"$"
+	negasit db 13,10,"Valoarea nu se afla in vector.",13,10,"$"
+	v db 100 dup (?) 
+	n db ? 
+	x db ? 
+	poz db ? 
+	nr db ?
+
+.CODE
+
+start:
+
+	mov ax, @data 
+	mov ds, ax 
+	
+	lea dx,sirintrebare
+	mov ah,09h
+	int 21h
+	
+	mov ah,01h
+	int 21h
+	sub al,30h
+	mov nr,al
+	cmp nr,2
+	je citireDouaCifre
+	
+	lea dx, sirn
+	mov ah, 09h
+	int 21h 
+	
+	mov ah,01h
+	int 21h
+	sub al,30h
+	mov n,al
+	jmp citireX
+citireDouaCifre:
+	lea dx, sirn
+	mov ah, 09h
+	int 21h 
+	
+	mov ah, 01h 
+	int 21h
+	sub al, 30h
+	mov dl, al 
+	mov ax,10
+	mul dl
+	mov dl,al
+	mov ah, 01h 
+	int 21h
+	sub al,30h
+	add dl,al
+	mov n,dl
+
+citireX:
+	lea dx, sirx
+	mov ah, 09h 
+	int 21h 
+
+	mov ah, 01h 
+	int 21h 
+	sub al, 30h 
+	mov x, al
+
+	lea dx, sirv 
+	mov ah, 09h 
+	int 21h 
+
+	lea si, v 
+	xor cx,cx
+	mov cl, n 
+	mov nr,0
+
+buclaCitire:
+	
+	mov ah, 01h
+	int 21h 
+	
+	sub al, 30h 
+	mov [si], al 
+	inc si 
+	
+	lea dx,nextline
+	mov ah,09h
+	int 21h
+	loop buclaCitire
+
+prelucrare:
+
+	lea si, v 
+	mov cl, n 
+	mov bl, x
+	xor dx,dx
+	cautarePrimaAparitie:
+		cmp cl, 0 
+		je ENegasit 
+		mov al, [si] 
+		cmp al, bl 
+		je EGasit 
+		inc si 
+		loop cautarePrimaAparitie 
+	ENegasit: 
+		lea dx, negasit 
+		mov ah, 09h 
+		int 21h 
+		jmp sfarsitProgram 
+
+	EGasit:
+		mov nr,1
+		lea bx, v
+		sub si, bx 
+		mov ax, si
+		mov poz, al 
+
+		lea dx, gasit 
+		mov ah, 09h
+		int 21h
+		
+		xor dx,dx
+		mov dl, poz 
+		add dl, 30h
+		mov ah, 02h 
+		int 21h
+		
+		add si,bx
+		mov bl,x
+		continuare:
+			inc si 
+			mov al, [si] 
+			cmp al, bl 
+			jne incrementare
+			inc nr
+			loop continuare
+			jmp afisare
+			incrementare:
+				dec cx
+				cmp cx,0
+				jne continuare
+				jmp afisare
+			
+afisare:
+	lea dx,afis
+	mov ah,09h
+	int 21h
+	
+	xor dx,dx
+	mov dl, nr
+	add dl, 30h
+	mov ah, 02h 
+	int 21h
+	
+	cmp nr,1
+	je sfarsitProgram
+	
+	
+	lea dx,pozitii
+	mov ah,09h
+	int 21h
+	
+	lea si,v
+	mov cl,n
+	mov bl,x
+	verifica:
+		mov al,[si]
+		cmp al,bl
+		jne decrementare
+		
+		lea bx, v
+		sub si, bx 
+		mov ax, si
+		xor dx,dx
+		mov dl,al
+		add dl,30h
+		mov ah, 02h 
+		int 21h
+		
+		add si,bx
+		mov bl,x
+		inc si
+		loop verifica
+		jmp sfarsitProgram
+		decrementare:
+			dec cx
+			inc si
+			cmp cx,0
+			jne verifica
+			
+	
+sfarsitProgram: 
+	
+	
+	mov ah,01h
+	int 21h
+	
+	mov ah,4Ch 
+	int 21h
+END start
